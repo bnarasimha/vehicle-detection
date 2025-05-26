@@ -1,4 +1,4 @@
-# Traffic Video Vehicle & Traffic Light Detection
+# Traffic Video Vehicle Detection
 
 This application uses YOLOv8 and Streamlit to detect vehicles and traffic lights in a recorded video, display bounding boxes, and show live analytics in a side panel. It also estimates vehicle speed in both pixels/frame and km/h (with user calibration).
 
