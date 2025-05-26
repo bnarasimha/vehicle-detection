@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 from collections import defaultdict
+import pandas as pd
+import random
 
 # --- CONFIG ---
 VIDEO_PATH = 'assets/Traffic_Flow_In_The_Highway.mp4'  # <-- Replace with your video path
@@ -151,12 +153,16 @@ with col2:
     st.markdown("---")
     st.markdown("<span style='color: #888;'>Detection updates in real time as the video plays.</span>", unsafe_allow_html=True)
 
+# Data storage for time-series charts
+frame_history = []
+
 # --- VIDEO PROCESSING ---
 cap = cv2.VideoCapture(VIDEO_PATH)
 tracker = CentroidTracker()
 fps = cap.get(cv2.CAP_PROP_FPS) if cap.isOpened() else 30
 
 frame_num = 0
+
 while cap.isOpened():
     ret, frame = cap.read()
     if not ret:
@@ -195,8 +201,8 @@ while cap.isOpened():
                 label = f"Traffic Light: {traffic_light_state or '?'}"
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                 cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-
     objects, tracks = tracker.update(detections)
+
     # Speed estimation (pixels/frame)
     speeds = {}
     for object_id, track in tracks.items():
@@ -208,6 +214,14 @@ while cap.isOpened():
     # Convert to km/h
     avg_speed_m_per_s = avg_speed * meters_per_pixel * fps
     avg_speed_km_per_h = avg_speed_m_per_s * 3.6
+
+    # --- Store metrics for charts ---
+    frame_history.append({
+        'frame': frame_num,
+        'vehicle_count': len([d for d in detections if d[4] in VEHICLE_CLASSES]),
+        'avg_speed_kmh': avg_speed_km_per_h,
+        'traffic_light': traffic_light_state or 'None',
+    })
 
     # --- Update UI ---
     video_placeholder.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), channels="RGB")
@@ -222,4 +236,23 @@ while cap.isOpened():
         import time; time.sleep(0.01)
 
 cap.release()
+
+# --- Show Time-Series Charts ---
+if frame_history:
+    df = pd.DataFrame(frame_history)
+    st.markdown("## 📈 Detection Analytics")
+    chart_cols = st.columns(3)
+    with chart_cols[0]:
+        st.line_chart(df.set_index('frame')['vehicle_count'], height=200, use_container_width=True)
+        st.caption('Vehicle Count per Frame')
+    with chart_cols[1]:
+        st.line_chart(df.set_index('frame')['avg_speed_kmh'], height=200, use_container_width=True)
+        st.caption('Average Speed (km/h) per Frame')
+    with chart_cols[2]:
+        # Encode traffic light state as numbers for plotting
+        color_map = {'Red': 2, 'Yellow': 1, 'Green': 0, 'None': -1}
+        df['traffic_light_num'] = df['traffic_light'].map(color_map)
+        st.line_chart(df.set_index('frame')['traffic_light_num'], height=200, use_container_width=True)
+        st.caption('Traffic Light State (2=Red, 1=Yellow, 0=Green, -1=None)')
+
 st.success("Video processing complete. Replace 'sample.mp4' with your own video.") 
