@@ -10,6 +10,7 @@ RUN apt-get update && \
         libxext6 \
         libxrender-dev \
         ffmpeg \
+        libgl1 \
         && rm -rf /var/lib/apt/lists/*
 
 # Set work directory

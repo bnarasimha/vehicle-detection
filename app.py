@@ -255,4 +255,4 @@ if frame_history:
         st.line_chart(df.set_index('frame')['traffic_light_num'], height=200, use_container_width=True)
         st.caption('Traffic Light State (2=Red, 1=Yellow, 0=Green, -1=None)')
 
-st.success("Video processing complete. Replace 'sample.mp4' with your own video.") 
+st.success("Video processing complete.") 
