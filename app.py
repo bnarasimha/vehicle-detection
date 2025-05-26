@@ -5,7 +5,7 @@ from ultralytics import YOLO
 from collections import defaultdict
 
 # --- CONFIG ---
-VIDEO_PATH = 'Traffic_Flow_In_The_Highway.mp4'  # <-- Replace with your video path
+VIDEO_PATH = 'assets/Traffic_Flow_In_The_Highway.mp4'  # <-- Replace with your video path
 #VIDEO_PATH = 'Traffic_Lights.mp4'  # <-- Replace with your video path
 YOLO_WEIGHTS = 'yolov8n.pt'  # <-- Replace with your custom weights if needed
 
@@ -82,8 +82,59 @@ class CentroidTracker:
         return self.objects, self.tracks
 
 # --- STREAMLIT UI ---
-st.set_page_config(layout="wide")
-st.title("Traffic Video Vehicle & Traffic Light Detection")
+st.set_page_config(layout="wide", page_title="🚦 Vehicle & Traffic Light Detection", page_icon="🚗")
+
+# Custom CSS for modern look and mobile tweaks
+st.markdown(
+    """
+    <style>
+    .main {
+        background-color: #f7f9fa;
+    }
+    .stApp {
+        font-family: 'Segoe UI', 'Roboto', sans-serif;
+    }
+    .block-container {
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+    }
+    .metric-label, .metric-value {
+        font-size: 1.1rem !important;
+    }
+    @media (max-width: 600px) {
+        .block-container {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+        .stColumn {
+            flex-direction: column !important;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    """
+    <div style='background: linear-gradient(90deg, #4f8bf9 0%, #1fc8db 100%); padding: 1.2rem 0.5rem; border-radius: 12px; margin-bottom: 1.5rem;'>
+        <h1 style='color: white; text-align: center; margin-bottom: 0;'>🚦 Vehicle & Traffic Light Detection</h1>
+        <p style='color: #e0e0e0; text-align: center; margin-top: 0.5rem;'>Analyze traffic videos for vehicles and traffic lights, with live detection and speed estimation.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Sidebar for settings
+with st.sidebar:
+    st.header("⚙️ Settings")
+    meters_per_pixel = st.number_input(
+        "Meters per pixel (scene scale, estimate/calibrate for your video)",
+        min_value=0.0001, max_value=1.0, value=0.40, step=0.001,
+        help="Estimate: 1 pixel = how many meters? Calibrate using a known distance in your video."
+    )
+    st.markdown("---")
+    st.info("Upload your own video by replacing the file in the code or extend this app to support file uploads.")
 
 col1, col2 = st.columns([3, 1])
 
@@ -91,18 +142,14 @@ with col1:
     video_placeholder = st.empty()
 
 with col2:
-    st.header("Live Detection Info")
+    st.markdown("### 📊 Live Detection Info")
     vehicle_count_placeholder = st.empty()
     vehicle_types_placeholder = st.empty()
     speed_px_placeholder = st.empty()
     speed_kmh_placeholder = st.empty()
     traffic_light_placeholder = st.empty()
     st.markdown("---")
-    meters_per_pixel = st.number_input(
-        "Meters per pixel (scene scale, estimate/calibrate for your video)",
-        min_value=0.0001, max_value=1.0, value=0.40, step=0.001,
-        help="Estimate: 1 pixel = how many meters? Calibrate using a known distance in your video."
-    )
+    st.markdown("<span style='color: #888;'>Detection updates in real time as the video plays.</span>", unsafe_allow_html=True)
 
 # --- VIDEO PROCESSING ---
 cap = cv2.VideoCapture(VIDEO_PATH)
